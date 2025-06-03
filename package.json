@@ -1,0 +1,20 @@
+{
+  "name": "discordmock",
+  "version": "1.0.0",
+  "main": "discord-mock.js",
+  "type": "module",
+  "scripts": {
+    "start": "node discord-mock.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "axios": "^1.9.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "open": "^10.1.2",
+    "uuid": "^11.1.0"
+  }
+}
