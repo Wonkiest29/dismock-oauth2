@@ -3,8 +3,8 @@ import axios from 'axios';
 import open from 'open';
 import bodyParser from 'body-parser';
 
-const CLIENT_ID = '1181148727826722816';
-const CLIENT_SECRET = 'kl-yQ-6Sa1LE23-o-QhLB_Ny9aSttURp';
+const CLIENT_ID = '11111';
+const CLIENT_SECRET = '1111111';
 const REDIRECT_URI = 'khttp://localhost:3000/callback';
 const AUTH_URL = 'http://localhost:8081/oauth2/authorize';
 const TOKEN_URL = 'http://localhost:8081/api/oauth2/token';
