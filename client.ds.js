@@ -5,7 +5,7 @@ import bodyParser from 'body-parser';
 
 const CLIENT_ID = '11111';
 const CLIENT_SECRET = '1111111';
-const REDIRECT_URI = 'khttp://localhost:3000/callback';
+const REDIRECT_URI = 'http://localhost:3000/callback';
 const AUTH_URL = 'http://localhost:8081/oauth2/authorize';
 const TOKEN_URL = 'http://localhost:8081/api/oauth2/token';
 const USER_URL = 'http://localhost:8081/api/users/@me';
