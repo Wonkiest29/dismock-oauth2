@@ -1,3 +1,4 @@
+Collecting workspace information```markdown
 # DiscordMock
 
 A simple mock implementation of Discord's OAuth2 API for local development and testing, along with a sample OAuth2 client.
@@ -49,3 +50,4 @@ Visit [http://localhost:3333/login](http://localhost:3333/login) in your browser
 ## License
 
 MIT License
+```

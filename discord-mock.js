@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const app = express();
 const PORT = 8081;
+const multiuser = true; // Флаг для поддержки мульти-аккаунтов
 
 app.use(cors());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -14,38 +15,85 @@ const codes = {};
 const tokens = {};
 const refreshTokens = {};
 
+// Задаём bigint ID для пользователей
+const users = {
+    user1: 741957448532754493n, // Пример ID пользователя в bigint формате
+    user2: 1380646048556515359n,
+    user3: 310848622642069504n,
+};
+
 function debug(...args) {
     console.log('[MOCK DISCORD]', ...args);
 }
 
 // Симуляция /oauth2/authorize (редирект с code)
 app.get('/oauth2/authorize', (req, res) => {
-    const { client_id, redirect_uri, response_type, scope, state } = req.query;
-
-    debug('GET /oauth2/authorize', req.query);
+    const { client_id, redirect_uri, response_type, scope, state, selected_user } = req.query;
 
     if (response_type !== 'code') {
-        debug('Invalid response_type:', response_type);
         return res.status(400).send('Unsupported response_type');
     }
 
-    // Генерируем код авторизации
+    if (!multiuser) {
+        // Без выбора пользователя, сразу выдаём code для дефолтного user
+        const defaultUserKey = 'user1'; // Можно изменить на любого из users
+        const code = uuidv4();
+
+        const user_id = users[defaultUserKey] || 0n;
+
+        codes[code] = {
+            client_id,
+            redirect_uri,
+            scope,
+            user_id,
+        };
+
+        const redirect = `${redirect_uri}?code=${code}${state ? `&state=${state}` : ''}`;
+
+        return res.redirect(redirect);
+    }
+
+    // Если multiuser = true, как было раньше — показываем выбор аккаунта
+    if (!selected_user) {
+        return res.send(`
+            <html>
+                <body>
+                    <h2>Выберите аккаунт</h2>
+                    <form method="GET" action="/oauth2/authorize">
+                        <input type="hidden" name="client_id" value="${client_id}" />
+                        <input type="hidden" name="redirect_uri" value="${redirect_uri}" />
+                        <input type="hidden" name="response_type" value="${response_type}" />
+                        <input type="hidden" name="scope" value="${scope}" />
+                        ${state ? `<input type="hidden" name="state" value="${state}" />` : ''}
+                        
+                        <select name="selected_user" required>
+                            <option value="">--Выберите аккаунт--</option>
+                            <option value="user1">example1</option>
+                            <option value="user2">example2</option>
+                            <option value="user3">example3</option>
+                        </select>
+                        <button type="submit">Авторизоваться</button>
+                    </form>
+                </body>
+            </html>
+        `);
+    }
+
+    // Если selected_user выбран, создаём код как обычно
     const code = uuidv4();
+
+    const user_id = users[selected_user] || 0n;
+
     codes[code] = {
         client_id,
         redirect_uri,
         scope,
-        user_id: '999999999',
+        user_id,
     };
 
-    debug('Generated code:', code, 'for client_id:', client_id);
-
     const redirect = `${redirect_uri}?code=${code}${state ? `&state=${state}` : ''}`;
-    debug('Would redirect to:', redirect);
 
-    // Возвращаем 302 и Location, как настоящий Discord
-    res.set('Location', redirect);
-    return res.status(302).send(`Found. Redirecting to ${redirect}`);
+    res.redirect(redirect);
 });
 
 // Симуляция /api/oauth2/token (обмен code на access_token или refresh_token на access_token)
@@ -70,7 +118,7 @@ app.post('/api/oauth2/token', (req, res) => {
         tokens[access_token] = { user_id, scope };
         refreshTokens[refresh] = { user_id, scope };
 
-        debug('Issued access_token:', access_token, 'refresh_token:', refresh, 'for user:', user_id);
+        debug('Issued access_token:', access_token, 'refresh_token:', refresh, 'for user:', user_id.toString());
 
         delete codes[code];
 
@@ -97,13 +145,13 @@ app.post('/api/oauth2/token', (req, res) => {
 
         tokens[access_token] = { user_id, scope };
 
-        debug('Refreshed access_token:', access_token, 'for user:', user_id);
+        debug('Refreshed access_token:', access_token, 'for user:', user_id.toString());
 
         return res.json({
             access_token,
             token_type: 'Bearer',
             expires_in: 604800,
-            refresh_token, // Discord обычно возвращает тот же refresh_token
+            refresh_token,
             scope,
         });
     }
@@ -131,10 +179,12 @@ app.get('/api/users/@me', (req, res) => {
         return res.status(401).json({ error: 'invalid_token', error_description: 'Invalid or expired token.' });
     }
 
+    const { user_id } = tokens[token];
+
     debug('Returning user info for token:', token);
 
     res.json({
-        id: tokens[token].user_id,
+        id: user_id.toString(),  // преобразуем bigint в строку
         username: 'MockedUser',
         discriminator: '0420',
         avatar: 'mocked_avatar.png',
