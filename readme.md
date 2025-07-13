@@ -1,4 +1,3 @@
-Collecting workspace information```markdown
 # DiscordMock
 
 A simple mock implementation of Discord's OAuth2 API for local development and testing, along with a sample OAuth2 client.
